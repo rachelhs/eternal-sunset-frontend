@@ -1,0 +1,101 @@
+<html>
+
+<head>
+</head>
+
+<body>
+    <script src="../config.js"></script>
+    <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.4.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.4.3/firebase-database.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.4.3/firebase-analytics.js"></script>
+    <script>
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        var firebaseConfig = {
+            apiKey: api_key,
+            authDomain: "eternal-sunset.firebaseapp.com",
+            databaseURL: database_url,
+            projectId: "eternal-sunset",
+            storageBucket: "eternal-sunset.appspot.com",
+            messagingSenderId: messaging_sender_id,
+            appId: app_id,
+            measurementId: measurement_id
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
+
+        // get sunsets for today and tomorrow
+        const currentDate = dayjs(dayjs()).format('YYYY-MM-DD');
+        const tomorrowsDate = dayjs(dayjs().add(1, 'day')).format('YYYY-MM-DD');
+        let soonest_sunset_name = "";
+        const sunsetTimes = [];
+        const sunsetIndexs = [];
+        // make an ordered array of sunset times and the index number their webcam
+        orderSunset = () => {
+            let sunsetToday = firebase.database().ref(`sunsets/${currentDate}`);
+            sunsetToday.orderByValue().on("value", (snapshot) => {
+                snapshot.forEach((data) => {
+                    sunsetTimes.push(data.val());
+                    sunsetIndexs.push(data.key);
+                });
+            });
+            let sunsetTomorrow = firebase.database().ref(`sunsets/${tomorrowsDate}`);
+            sunsetTomorrow.orderByValue().on("value", (snapshot) => {
+                snapshot.forEach((data) => {
+                    sunsetTimes.push(data.val());
+                    sunsetIndexs.push(data.key);
+                })
+            })
+        };
+
+        showSunset = () => {
+            let startCamIndex = 0;
+            // find soonest sunset
+            sunsetTimes.forEach((sunsetTime) => {
+                let timeDiff = dayjs(sunsetTime).diff(dayjs());
+                // find soonest positive time difference
+                // API error returns negative time of 1st Jan 1970 - discount this by accepting > -1000000000000 time difference
+                if (timeDiff < 0 && timeDiff > -1000000000000) {
+                    startCamIndex = sunsetTimes.indexOf(sunsetTime);
+                }
+            });
+            // start the cams at first non - negative time difference
+            startCamIndex += 1;
+            // show first cam
+            showCam(startCamIndex);
+        }
+
+        showCam = (camIndex) => {
+            // TO DO == CHECK IF VIDEO IS PLAYING / VALID OTHERWISE SKIP
+            let camData = sunsetIndexs[camIndex];
+            console.log(sunsetIndexs[camIndex]);
+            // show cam
+            firebase.database().ref(`${camData}`).once('value', (snap) => {
+                let embed = snap.val().URL;
+                document.getElementById("sunset-cam").setAttribute('src', embed + '?autoplay=1&mute=1');
+                document.getElementById("sunset-cam").setAttribute('width', window.innerWidth);
+                document.getElementById("sunset-cam").setAttribute('height', window.innerHeight);
+            })
+            // time until next cam (when sun sets at current one)
+            let currentSunsetCountdown = dayjs(sunsetTimes[camIndex]).diff(dayjs());
+            let currentSunsetCountdownMins = currentSunsetCountdown / 60000;
+            console.log("sun setting in ", currentSunsetCountdownMins, "minutes");
+            let nextCam = camIndex + 1;
+            // set timer to move to next cam at sunset of current cam
+            setTimeout(() => { console.log('next cam'); showCam(nextCam); }, currentSunsetCountdown);
+        }
+
+        // call once to get ordered arrays of sunsets
+        orderSunset();
+        setTimeout(showSunset, 1000);
+    </script>
+    <iframe id="sunset-cam" frameborder="0" allowfullscreen></iframe>
+</body>
+
+</html>

@@ -4,7 +4,7 @@
 </head>
 
 <body>
-    <script src="./config.js"></script>
+    <script src="../config.js"></script>
     <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
     <!-- The core Firebase JS SDK is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/8.4.3/firebase-app.js"></script>
@@ -19,12 +19,12 @@
         var firebaseConfig = {
             apiKey: api_key,
             authDomain: "eternal-sunset.firebaseapp.com",
-            databaseURL: database_url,
+            databaseURL: "https://eternal-sunset-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "eternal-sunset",
             storageBucket: "eternal-sunset.appspot.com",
-            messagingSenderId: messaging_sender_id,
-            appId: app_id,
-            measurementId: measurement_id
+            messagingSenderId: "721854210888",
+            appId: "1:721854210888:web:b6443f1e86c6a0095a097d",
+            measurementId: "G-CHZCZD99S4"
         };
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
